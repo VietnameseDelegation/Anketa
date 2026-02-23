@@ -1,0 +1,14 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deployment
+        run: |
+          curl -f "https://api.render.com/deploy/srv-d6e2sbktgctc73cjhpd0?key=tIpsHpgFC3w"
