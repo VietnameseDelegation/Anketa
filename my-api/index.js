@@ -24,8 +24,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running' });
 });
 
-// Catch-all route to serve the frontend (for client-side routing)
-app.get('(.*)', (req, res) => {
+// Fallback route to serve the frontend (for client-side routing)
+// Using app.use() as a catch-all is more robust in Express 5
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
