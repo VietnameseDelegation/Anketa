@@ -10,6 +10,7 @@
     "dev": "vite",
     "dev:backend": "npm run dev -w my-api",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "start": "node my-api/index.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
