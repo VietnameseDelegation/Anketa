@@ -13,8 +13,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Poll Data (In-Memory)
-let pollData = {
+import fs from 'fs';
+
+// File path for storing poll stats
+const DATA_FILE = path.join(__dirname, 'statistics.json');
+
+// Default Polling Data Form
+const defaultPollData = {
   question: "Jaký je váš nejoblíbenější programovací jazyk?",
   options: [
     { id: 'a', text: "JavaScript / TypeScript", votes: 0 },
@@ -23,6 +28,26 @@ let pollData = {
     { id: 'd', text: "PHP / SQL", votes: 0 }
   ],
   adminToken: "secret123" // Hardcoded token for reset
+};
+
+// Initialize or Load Poll Data
+let pollData = { ...defaultPollData };
+if (fs.existsSync(DATA_FILE)) {
+  try {
+    const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
+    pollData = { ...defaultPollData, ...JSON.parse(rawData) };
+  } catch (err) {
+    console.error('Error reading stats file', err);
+  }
+}
+
+// Function to save stats map to file
+const savePollStats = () => {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(pollData, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing stats file', err);
+  }
 };
 
 // Middleware
@@ -55,6 +80,7 @@ app.post('/api/vote', (req, res) => {
   }
 
   option.votes += 1;
+  savePollStats();
 
   // Set cookie for 1 year
   res.cookie('voted', 'true', {
@@ -74,6 +100,7 @@ app.post('/api/reset', (req, res) => {
   }
 
   pollData.options.forEach(o => o.votes = 0);
+  savePollStats();
   res.json({ success: true, message: "Hlasování bylo resetováno.", options: pollData.options });
 });
 
