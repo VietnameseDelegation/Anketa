@@ -105,6 +105,18 @@ const PollApp: React.FC = () => {
                     )}
                 </div>
             )}
+
+            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                <a
+                    href="https://github.com/VietnameseDelegation/Anketa/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="poll-view-btn"
+                    style={{ display: 'inline-block' }}
+                >
+                    Nahlásit problém
+                </a>
+            </div>
         </div>
     );
 };
