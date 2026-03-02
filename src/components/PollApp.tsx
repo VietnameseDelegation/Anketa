@@ -17,7 +17,6 @@ const PollApp: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showResults, setShowResults] = useState(false);
-    const [resetToken, setResetToken] = useState('');
 
     const API_URL = import.meta.env.MODE === 'development' ? 'http://localhost:5000/api' : '/api';
 
@@ -54,29 +53,6 @@ const PollApp: React.FC = () => {
             }
         } catch (err) {
             alert('Hlasování se nezdařilo.');
-        }
-    };
-
-    const handleReset = async () => {
-        try {
-            const res = await fetch(`${API_URL}/reset`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: resetToken }),
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setPoll(prev => prev ? { ...prev, options: data.options, hasVoted: false } : null);
-                setShowResults(false);
-                setResetToken('');
-                // Force cookie clearing if needed
-                document.cookie = "voted=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                alert(data.message);
-            } else {
-                alert(data.message);
-            }
-        } catch (err) {
-            alert('Reset se nezdařil.');
         }
     };
 
@@ -129,17 +105,6 @@ const PollApp: React.FC = () => {
                     )}
                 </div>
             )}
-
-            <div className="poll-admin">
-                <h3>Administrace</h3>
-                <input
-                    type="password"
-                    placeholder="Admin Token"
-                    value={resetToken}
-                    onChange={(e) => setResetToken(e.target.value)}
-                />
-                <button className="reset-btn" onClick={handleReset}>Resetovat hlasování</button>
-            </div>
         </div>
     );
 };
