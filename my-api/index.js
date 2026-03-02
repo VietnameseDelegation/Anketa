@@ -27,7 +27,7 @@ const defaultPollData = {
     { id: 'c', text: "C# / Java", votes: 0 },
     { id: 'd', text: "PHP / SQL", votes: 0 }
   ],
-  adminToken: "secret123" // Hardcoded token for reset
+  adminToken: "secret1234" // Hardcoded token for reset
 };
 
 // Initialize or Load Poll Data
