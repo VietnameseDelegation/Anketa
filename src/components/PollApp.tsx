@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface Option {
     id: string;
@@ -26,7 +28,7 @@ const PollApp: React.FC = () => {
             const data = await res.json();
             setPoll(data);
             if (data.hasVoted) setShowResults(true);
-        } catch (err) {
+        } catch {
             setError('Nepodařilo se načíst anketu.');
         } finally {
             setLoading(false);
@@ -35,6 +37,7 @@ const PollApp: React.FC = () => {
 
     useEffect(() => {
         fetchPoll();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleVote = async (optionId: string) => {
@@ -48,11 +51,12 @@ const PollApp: React.FC = () => {
             if (res.ok) {
                 setPoll(prev => prev ? { ...prev, options: data.options, hasVoted: true } : null);
                 setShowResults(true);
+                toast.success('Hlas úspěšně zaznamenán!');
             } else {
-                alert(data.message);
+                toast.error(data.message || 'Nepodařilo se zaznamenat hlas.');
             }
-        } catch (err) {
-            alert('Hlasování se nezdařilo.');
+        } catch {
+            toast.error('Hlasování se nezdařilo.');
         }
     };
 
@@ -63,61 +67,64 @@ const PollApp: React.FC = () => {
     const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
 
     return (
-        <div className="poll-container">
-            <h1 className="poll-title">{poll.question}</h1>
+        <>
+            <ToastContainer position="top-right" autoClose={3000} />
+            <div className="poll-container">
+                <h1 className="poll-title">{poll.question}</h1>
 
-            {!showResults ? (
-                <div className="poll-options">
-                    {poll.options.map(option => (
-                        <button
-                            key={option.id}
-                            className="poll-option-btn"
-                            onClick={() => handleVote(option.id)}
-                        >
-                            {option.text}
+                {!showResults ? (
+                    <div className="poll-options">
+                        {poll.options.map(option => (
+                            <button
+                                key={option.id}
+                                className="poll-option-btn"
+                                onClick={() => handleVote(option.id)}
+                            >
+                                {option.text}
+                            </button>
+                        ))}
+                        <button className="poll-view-btn" onClick={() => setShowResults(true)}>
+                            Zobrazit výsledky bez hlasování
                         </button>
-                    ))}
-                    <button className="poll-view-btn" onClick={() => setShowResults(true)}>
-                        Zobrazit výsledky bez hlasování
-                    </button>
-                </div>
-            ) : (
-                <div className="poll-results">
-                    {poll.options.map(option => {
-                        const percentage = totalVotes === 0 ? 0 : Math.round((option.votes / totalVotes) * 100);
-                        return (
-                            <div key={option.id} className="result-item">
-                                <div className="result-info">
-                                    <span className="result-text">{option.text}</span>
-                                    <span className="result-count">{option.votes} hlasů ({percentage}%)</span>
+                    </div>
+                ) : (
+                    <div className="poll-results">
+                        {poll.options.map(option => {
+                            const percentage = totalVotes === 0 ? 0 : Math.round((option.votes / totalVotes) * 100);
+                            return (
+                                <div key={option.id} className="result-item">
+                                    <div className="result-info">
+                                        <span className="result-text">{option.text}</span>
+                                        <span className="result-count">{option.votes} hlasů ({percentage}%)</span>
+                                    </div>
+                                    <div className="progress-bar">
+                                        <div className="progress-fill" style={{ width: `${percentage}%` }}></div>
+                                    </div>
                                 </div>
-                                <div className="progress-bar">
-                                    <div className="progress-fill" style={{ width: `${percentage}%` }}></div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                    <div className="result-summary">Celkem hlasů: {totalVotes}</div>
-                    {!poll.hasVoted && (
-                        <button className="poll-view-btn" onClick={() => setShowResults(false)}>
-                            Zpět k hlasování
-                        </button>
-                    )}
-                </div>
-            )}
+                            );
+                        })}
+                        <div className="result-summary">Celkem hlasů: {totalVotes}</div>
+                        {!poll.hasVoted && (
+                            <button className="poll-view-btn" onClick={() => setShowResults(false)}>
+                                Zpět k hlasování
+                            </button>
+                        )}
+                    </div>
+                )}
 
-            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                <a
-                    href="https://github.com/VietnameseDelegation/Anketa/issues"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="poll-view-btn"
-                    style={{ display: 'inline-block' }}
-                >
-                    Nahlásit problém
-                </a>
+                <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                    <a
+                        href="https://github.com/VietnameseDelegation/Anketa/issues"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="poll-view-btn"
+                        style={{ display: 'inline-block' }}
+                    >
+                        Nahlásit problém
+                    </a>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

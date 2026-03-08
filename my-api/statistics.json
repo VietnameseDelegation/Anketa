@@ -9,7 +9,7 @@
     {
       "id": "b",
       "text": "Python",
-      "votes": 0
+      "votes": 1
     },
     {
       "id": "c",
@@ -22,5 +22,5 @@
       "votes": 0
     }
   ],
-  "adminToken": "secret123"
+  "pollId": "1773011451452"
 }
