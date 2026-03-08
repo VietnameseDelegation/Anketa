@@ -17,6 +17,12 @@ import fs from 'fs';
 
 // File path for storing poll stats
 const DATA_FILE = path.join(__dirname, 'statistics.json');
+const IPS_DIR = path.join(__dirname, 'voted_ips');
+
+// Initialize IPs directory
+if (!fs.existsSync(IPS_DIR)) {
+  fs.mkdirSync(IPS_DIR);
+}
 
 // Default Polling Data Form
 const defaultPollData = {
@@ -36,6 +42,7 @@ if (fs.existsSync(DATA_FILE)) {
     const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
     pollData = { ...defaultPollData, ...JSON.parse(rawData) };
     if (pollData.adminToken) delete pollData.adminToken;
+    if (pollData.votedIps) delete pollData.votedIps; // Remove legacy array
   } catch (err) {
     console.error('Error reading stats file', err);
   }
@@ -63,14 +70,19 @@ app.use(express.static(path.join(__dirname, '../dist')));
 
 // API Routes
 app.get('/api/poll', (req, res) => {
-  const hasVoted = req.cookies.voted === 'true';
+  const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ipFile = path.join(IPS_DIR, userIp.replace(/[^a-zA-Z0-9.-]/g, '_'));
+
+  const hasVoted = req.cookies.voted === 'true' || fs.existsSync(ipFile);
   res.json({ ...pollData, hasVoted, adminToken: undefined });
 });
 
 app.post('/api/vote', (req, res) => {
   const { optionId } = req.body;
+  const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ipFile = path.join(IPS_DIR, userIp.replace(/[^a-zA-Z0-9.-]/g, '_'));
 
-  if (req.cookies.voted === 'true') {
+  if (req.cookies.voted === 'true' || fs.existsSync(ipFile)) {
     return res.status(403).json({ message: "Již jste hlasovali." });
   }
 
@@ -80,6 +92,7 @@ app.post('/api/vote', (req, res) => {
   }
 
   option.votes += 1;
+  fs.writeFileSync(ipFile, ''); // Create empty file to mark IP as voted
   savePollStats();
 
   // Set cookie for 1 year
@@ -100,6 +113,17 @@ app.post('/api/reset', (req, res) => {
   }
 
   pollData.options.forEach(o => o.votes = 0);
+
+  // Clear all IP files
+  try {
+    const files = fs.readdirSync(IPS_DIR);
+    for (const file of files) {
+      fs.unlinkSync(path.join(IPS_DIR, file));
+    }
+  } catch (err) {
+    console.error('Error clearing IPs directory', err);
+  }
+
   savePollStats();
   res.json({ success: true, message: "Hlasování bylo resetováno.", options: pollData.options });
 });
