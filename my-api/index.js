@@ -32,7 +32,8 @@ const defaultPollData = {
     { id: 'b', text: "Python", votes: 0 },
     { id: 'c', text: "C# / Java", votes: 0 },
     { id: 'd', text: "PHP / SQL", votes: 0 }
-  ]
+  ],
+  pollId: Date.now().toString() // Unique ID to invalidate old cookies on reset
 };
 
 // Initialize or Load Poll Data
@@ -41,6 +42,7 @@ if (fs.existsSync(DATA_FILE)) {
   try {
     const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
     pollData = { ...defaultPollData, ...JSON.parse(rawData) };
+    if (!pollData.pollId) pollData.pollId = Date.now().toString(); // Initialize if missing
     if (pollData.adminToken) delete pollData.adminToken;
     if (pollData.votedIps) delete pollData.votedIps; // Remove legacy array
   } catch (err) {
@@ -73,7 +75,7 @@ app.get('/api/poll', (req, res) => {
   const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ipFile = path.join(IPS_DIR, userIp.replace(/[^a-zA-Z0-9.-]/g, '_'));
 
-  const hasVoted = req.cookies.voted === 'true' || fs.existsSync(ipFile);
+  const hasVoted = req.cookies.voted === pollData.pollId || fs.existsSync(ipFile);
   res.json({ ...pollData, hasVoted, adminToken: undefined });
 });
 
@@ -82,7 +84,7 @@ app.post('/api/vote', (req, res) => {
   const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ipFile = path.join(IPS_DIR, userIp.replace(/[^a-zA-Z0-9.-]/g, '_'));
 
-  if (req.cookies.voted === 'true' || fs.existsSync(ipFile)) {
+  if (req.cookies.voted === pollData.pollId || fs.existsSync(ipFile)) {
     return res.status(403).json({ message: "Již jste hlasovali." });
   }
 
@@ -96,7 +98,7 @@ app.post('/api/vote', (req, res) => {
   savePollStats();
 
   // Set cookie for 1 year
-  res.cookie('voted', 'true', {
+  res.cookie('voted', pollData.pollId, {
     maxAge: 365 * 24 * 60 * 60 * 1000,
     httpOnly: false, // Accessible by frontend to check state
     sameSite: 'lax'
@@ -112,6 +114,7 @@ app.post('/api/reset', (req, res) => {
     return res.status(403).json({ message: "Neplatný token pro reset." });
   }
 
+  pollData.pollId = Date.now().toString(); // Invalidate old cookies
   pollData.options.forEach(o => o.votes = 0);
 
   // Clear all IP files
