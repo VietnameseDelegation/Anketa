@@ -5,11 +5,13 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const Admin: React.FC = () => {
     const [resetToken, setResetToken] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
     const API_URL = import.meta.env.MODE === 'development' ? 'http://localhost:5000/api' : '/api';
 
     const handleReset = async () => {
+        setIsSubmitting(true);
         try {
             const res = await fetch(`${API_URL}/reset`, {
                 method: 'POST',
@@ -27,6 +29,8 @@ const Admin: React.FC = () => {
             }
         } catch {
             toast.error('Reset se nezdařil.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -42,7 +46,9 @@ const Admin: React.FC = () => {
                         value={resetToken}
                         onChange={(e) => setResetToken(e.target.value)}
                     />
-                    <button className="reset-btn" onClick={handleReset}>Resetovat hlasování</button>
+                    <button className="reset-btn" onClick={handleReset} disabled={isSubmitting}>
+                        {isSubmitting ? 'Zpracovává se...' : 'Resetovat hlasování'}
+                    </button>
                 </div>
                 <button className="poll-view-btn" onClick={() => navigate('/')} style={{ marginTop: '20px' }}>
                     Zpět na anketu

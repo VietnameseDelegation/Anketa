@@ -19,6 +19,7 @@ const PollApp: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showResults, setShowResults] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API_URL = import.meta.env.MODE === 'development' ? 'http://localhost:5000/api' : '/api';
 
@@ -41,6 +42,7 @@ const PollApp: React.FC = () => {
     }, []);
 
     const handleVote = async (optionId: string) => {
+        setIsSubmitting(true);
         try {
             const res = await fetch(`${API_URL}/vote`, {
                 method: 'POST',
@@ -57,6 +59,8 @@ const PollApp: React.FC = () => {
             }
         } catch {
             toast.error('Hlasování se nezdařilo.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -79,8 +83,9 @@ const PollApp: React.FC = () => {
                                 key={option.id}
                                 className="poll-option-btn"
                                 onClick={() => handleVote(option.id)}
+                                disabled={isSubmitting}
                             >
-                                {option.text}
+                                {isSubmitting ? 'Hlasuji...' : option.text}
                             </button>
                         ))}
                         <button className="poll-view-btn" onClick={() => setShowResults(true)}>
