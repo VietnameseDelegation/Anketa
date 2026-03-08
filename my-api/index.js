@@ -26,8 +26,7 @@ const defaultPollData = {
     { id: 'b', text: "Python", votes: 0 },
     { id: 'c', text: "C# / Java", votes: 0 },
     { id: 'd', text: "PHP / SQL", votes: 0 }
-  ],
-  adminToken: "secret1234" // Hardcoded token for reset
+  ]
 };
 
 // Initialize or Load Poll Data
@@ -36,6 +35,7 @@ if (fs.existsSync(DATA_FILE)) {
   try {
     const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
     pollData = { ...defaultPollData, ...JSON.parse(rawData) };
+    if (pollData.adminToken) delete pollData.adminToken;
   } catch (err) {
     console.error('Error reading stats file', err);
   }
@@ -95,7 +95,7 @@ app.post('/api/vote', (req, res) => {
 app.post('/api/reset', (req, res) => {
   const { token } = req.body;
 
-  if (token !== pollData.adminToken) {
+  if (token !== process.env.ADMIN_TOKEN) {
     return res.status(403).json({ message: "Neplatný token pro reset." });
   }
 
